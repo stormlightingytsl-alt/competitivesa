@@ -1,4 +1,13 @@
 ﻿// Maneja generación dinámica de jugadores y crews
+function getPlayersList() {
+  const players = [];
+  for (let i = 1; i <= 50; i++) {
+    const name = (i === 1) ? 'Astarum' : (i === 2) ? 'Moonlight' : `Jugador ${i}`;
+    players.push(name);
+  }
+  return players;
+}
+
 function generatePlayers(count) {
   const container = document.getElementById('players');
   if (!container) return;
@@ -8,13 +17,21 @@ function generatePlayers(count) {
   for (let i = 1; i <= count; i++) {
     const card = document.createElement('div');
     card.className = 'player-card';
-    const name = (i === 1) ? 'Astarum' : `Jugador ${i}`;
+    const name = (i === 1) ? 'Astarum' : (i === 2) ? 'Moonlight' : `Jugador ${i}`;
     // Discord data for Astarum
     const astarumDiscordId = '1056681722353303614';
-    const astarumAvatar = 'file:///C:/Users/Diegoo/Downloads/1f05e6cb522cc355812f8f7c4685ea01.jpg'; // local image provided by user
+    const moonlightDiscordId = '693640792350392340';
+    const astarumYouTube = 'https://www.youtube.com/@astarumking';
+    const astarumAvatar = 'https://cdn.discordapp.com/embed/avatars/0.png'; // Discord placeholder avatar
     const discordElement = (i === 1)
       ? `<a class="discord" href="https://discord.com/users/${astarumDiscordId}" target="_blank" rel="noopener noreferrer">Discord</a>`
+      : (i === 2)
+      ? `<a class="discord" href="https://discord.com/users/${moonlightDiscordId}" target="_blank" rel="noopener noreferrer">Discord</a>`
       : `<button class="discord">Discord</button>`;
+    
+    const youtubeElement = (i === 1)
+      ? `<a class="youtube" href="${astarumYouTube}" target="_blank" rel="noopener noreferrer">YouTube</a>`
+      : `<button class="youtube">YouTube</button>`;
 
     const regionList = ['NA','EU','ASIA','SA','OC'];
     const region = (i === 1) ? 'EU' : regionList[i % regionList.length];
@@ -32,7 +49,7 @@ function generatePlayers(count) {
         </div>
       </div>
       <div class="buttons">
-        <button class="youtube">YouTube</button>
+        ${youtubeElement}
         ${discordElement}
       </div>
     `;
@@ -44,15 +61,40 @@ function showPlayerDetail(playerName) {
   const detail = document.getElementById('player-detail');
   const headerEl = document.querySelector('main .content header h1');
   if (!detail) return;
+  
+  // Validar si el jugador existe en la lista
+  const validPlayers = getPlayersList();
+  if (!validPlayers.includes(playerName)) {
+    detail.innerHTML = `
+      <div class="player-detail-card" style="text-align: center; padding: 40px;">
+        <h3 style="color: #ff6b6b;">❌ Jugador no encontrado</h3>
+        <p>El jugador "<strong>${playerName}</strong>" no existe en la tabla.</p>
+        <button id="detail-close" style="margin-top: 20px; background: #2563eb; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer;">Volver</button>
+      </div>
+    `;
+    const closeBtn = document.getElementById('detail-close');
+    if (closeBtn) {
+      closeBtn.addEventListener('click', () => {
+        detail.innerHTML = '';
+        if (window.currentView === 'players') generatePlayers(50);
+      });
+    }
+    return;
+  }
+  
   // find player's region by regenerating a single lookup
   let region = 'Unknown';
   if (playerName.toLowerCase() === 'astarum') region = 'EU';
+  else if (playerName.toLowerCase() === 'moonlight') {
+    const regionList = ['NA','EU','ASIA','SA','OC'];
+    region = regionList[1 % regionList.length]; // index 1 for Moonlight
+  }
   else {
     const m = playerName.match(/Jugador\s*(\d+)/i);
     if (m) {
       const idx = parseInt(m[1], 10);
-      const regions = ['NA','EU','ASIA','SA','OC'];
-      region = regions[idx % regions.length];
+      const regionList = ['NA','EU','ASIA','SA','OC'];
+      region = regionList[idx % regionList.length];
     }
   }
 
@@ -61,7 +103,7 @@ function showPlayerDetail(playerName) {
       <button class="close-x" id="detail-close">✕</button>
       <div class="avatar-wrap">
         <div class="avatar-large">
-          ${playerName.toLowerCase() === 'astarum' ? `<img src="file:///C:/Users/Diegoo/Downloads/1f05e6cb522cc355812f8f7c4685ea01.jpg" alt="${playerName}">` : '<div style="width:100%;height:100%;background:#223;">' + '</div>'}
+          ${playerName.toLowerCase() === 'astarum' ? `<img src="https://cdn.discordapp.com/embed/avatars/0.png" alt="${playerName}">` : '<div style="width:100%;height:100%;background:#223;">' + '</div>'}
         </div>
       </div>
       <h3>${playerName}</h3>
@@ -78,7 +120,7 @@ function showPlayerDetail(playerName) {
         <div class="stat-item">LT1<br><small>(90 Pts)</small></div>
       </div>
 
-      <a class="social-btn" href="https://discord.com/users/1056681722353303614" target="_blank" rel="noopener noreferrer">Discord Profile</a>
+      ${playerName.toLowerCase() === 'astarum' ? `<a class="social-btn" href="https://discord.com/users/1056681722353303614" target="_blank" rel="noopener noreferrer">Discord Profile</a>` : (playerName.toLowerCase() === 'moonlight' ? `<a class="social-btn" href="https://discord.com/users/693640792350392340" target="_blank" rel="noopener noreferrer">Discord Profile</a>` : `<button class="social-btn" disabled>Discord Profile</button>`)}
     </div>
   `;
 
@@ -137,6 +179,26 @@ function generateCrews(count) {
   }
 }
 
+function generate2v2(count) {
+  const container = document.getElementById('players');
+  if (!container) return;
+  window.currentView = '2v2';
+  container.innerHTML = '';
+  const headerEl = document.querySelector('main .content header h1');
+  if (headerEl) headerEl.textContent = '2v2 Matches';
+
+  for (let i = 1; i <= count; i++) {
+    const match = document.createElement('div');
+    match.className = 'war-log';
+    match.innerHTML = `
+      <strong>Match #${i}</strong>
+      <p>Team A vs Team B</p>
+      <small>Fecha: 2026-07-${(10+i).toString().padStart(2,'0')}</small>
+    `;
+    container.appendChild(match);
+  }
+}
+
 document.addEventListener('DOMContentLoaded', () => {
   // Inicial: mostrar jugadores
   // Inicial: mostrar jugadores y título
@@ -170,6 +232,14 @@ document.addEventListener('DOMContentLoaded', () => {
     linkWarlogs.addEventListener('click', (e) => {
       e.preventDefault();
       generateWarLogs(5);
+    });
+  }
+
+  const link2v2 = document.getElementById('link-2v2');
+  if (link2v2) {
+    link2v2.addEventListener('click', (e) => {
+      e.preventDefault();
+      generate2v2(5);
     });
   }
 
